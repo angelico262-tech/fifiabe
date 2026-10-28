@@ -29,7 +29,7 @@ type Manifest = {
 type CounterReceipt = { reference: string; passengerName: string; passengerPhone: string; seats: number[]; departureAt: string; route: string; vehicleCode: string; boardingStop?: string | null; destinationStop?: string | null; amountPaidAr: number; priceAtBookingAr: number; createdBy: string; createdAt: string };
 type StaffSession = { token: string; fullName: string; role: 'SUPER_ADMIN' | 'ADMIN' | 'OPERATOR' | 'DRIVER'; managedStopId?: string | null };
 
-const API = 'http://127.0.0.1:3000';
+const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:3000';
 const money = (value: number) => `${new Intl.NumberFormat('fr-FR').format(value)} Ar`;
 const dateLabel = (value: string) => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'full', timeStyle: 'short' }).format(new Date(value));
 const networkLabel: Record<string, string> = { MVOLA: 'MVola', ORANGE_MONEY: 'Orange Money', AIRTEL_MONEY: 'Airtel Money' };
