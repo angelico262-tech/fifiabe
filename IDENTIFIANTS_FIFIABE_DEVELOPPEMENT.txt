@@ -1,0 +1,71 @@
+FIFIABE — IDENTIFIANTS DE DÉVELOPPEMENT
+========================================
+
+URL de connexion au personnel
+-----------------------------
+http://127.0.0.1:5173/admin
+
+URL publique des avis et plaintes
+---------------------------------
+http://127.0.0.1:5173/avis
+
+1. SUPER ADMINISTRATEUR — PROPRIÉTAIRE DU SERVICE
+--------------------------------------------------
+E-mail       : superadmin@fifiabe.mg
+Mot de passe : SuperAdmin123!
+Rôle         : SUPER_ADMIN
+Accès        : visibilité complète sur les réservations, opérateurs, véhicules,
+               départs, paiements, avis, plaintes, activité et suivi neutre.
+
+2. ADMINISTRATEUR DE LA COOPÉRATIVE
+------------------------------------
+E-mail       : admin@fifiabe.mg
+Mot de passe : Admin123!
+Rôle         : ADMIN
+Accès        : gestion administrative globale selon les droits configurés.
+
+3. OPÉRATEURS
+-------------
+Tous les opérateurs utilisent le même mot de passe de développement :
+Mot de passe : Operateur123!
+
+Arrêt       E-mail
+----------  --------------------------------------
+Antalaha    operateur.antalaha@fifiabe.mg
+Andapa      operateur.andapa@fifiabe.mg
+Sambava     operateur.sambava@fifiabe.mg
+Ampanefena  operateur.ampanefena@fifiabe.mg
+Vohemar     operateur.vohemar@fifiabe.mg
+Tana        operateur.tana@fifiabe.mg
+
+Chaque opérateur est limité à son arrêt géré pour les opérations qui lui sont
+attribuées. Le super administrateur conserve la visibilité globale.
+
+4. CHAUFFEUR DE TEST
+--------------------
+E-mail       : chauffeur.test@fifiabe.mg
+Mot de passe : Driver123!
+Rôle         : DRIVER
+Accès        : lecture seule des départs et listes d’embarquement autorisés.
+
+IMPORTANT — SÉCURITÉ
+--------------------
+Ces identifiants sont des identifiants de développement créés par backend/prisma/seed.ts.
+Ils ne doivent pas être utilisés tels quels en production.
+
+Avant le déploiement public :
+- remplacer tous les mots de passe par des mots de passe uniques ;
+- ne jamais publier ce fichier dans GitHub ou dans un dossier public ;
+- conserver DATABASE_URL et JWT_SECRET uniquement dans .env ;
+- supprimer ou désactiver les comptes de test inutiles ;
+- activer une politique de changement de mot de passe pour le personnel.
+
+Origines de réservation suivies par l’application
+--------------------------------------------------
+PASSENGER_APP   = réservation initiée directement par un passager
+COUNTER         = réservation saisie au guichet par un opérateur
+LEGACY_UNKNOWN  = ancienne réservation dont l’origine n’est pas connue
+
+La commission du super administrateur n’est pas encore fixée. L’application
+conserve les historiques et les données de suivi pour permettre des simulations
+et une négociation ultérieure.

@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #FAF8F5; }
+body { margin: 0; }
+button, select, input { font: inherit; }
+
+@media print {
+  body { background: #fff !important; color: #000 !important; margin: 0 !important; }
+  * { background: #fff !important; color: #000 !important; box-shadow: none !important; text-shadow: none !important; }
+  .public-header, .topbar, .staff-header, .tabs, .filter-bar, .secondary, .danger, .table-actions, .staff-grid, .publication, .vehicles-grid, .vehicle-form, .admin-login, .lookup, .booking-progress, .payment-declaration { display: none !important; }
+  .manifest { display: block !important; border: none !important; padding: 0 !important; max-width: 100% !important; }
+  .manifest .panel-title button, .manifest h3, .manifest p { break-after: avoid; }
+  .receipt-print .actions { display: none !important; }
+  body.printing-receipt .publication { display: block !important; }
+  body.printing-receipt .publication > * { visibility: hidden !important; }
+  body.printing-receipt .publication .receipt-print, body.printing-receipt .publication .receipt-print * { visibility: visible !important; }
+}

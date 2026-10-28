@@ -1,0 +1,306 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  OPERATOR
+  DRIVER
+}
+
+enum BookingOrigin {
+  PASSENGER_APP
+  COUNTER
+  LEGACY_UNKNOWN
+}
+
+enum Direction {
+  SAVA_TO_TANA
+  TANA_TO_SAVA
+}
+
+enum TripStatus {
+  DRAFT
+  PUBLISHED
+  FULL
+  SCHEDULED
+  CANCELLED
+  COMPLETED
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  PAYMENT_DECLARED
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentNetwork {
+  MVOLA
+  ORANGE_MONEY
+  AIRTEL_MONEY
+}
+
+enum WaitlistStatus {
+  WAITING
+  CONTACTED
+  BOOKED
+  CANCELLED
+}
+
+enum FeedbackType {
+  REVIEW
+  COMPLAINT
+}
+
+enum FeedbackAuthorType {
+  PASSENGER
+  OPERATOR
+  ADMIN
+  DRIVER
+}
+
+enum FeedbackAudience {
+  SUPER_ADMIN
+  COOPERATIVE_ADMIN
+  OPERATIONS
+}
+
+enum FeedbackStatus {
+  NEW
+  IN_ANALYSIS
+  WAITING_RESPONSE
+  RESOLVED
+  REJECTED
+  CLOSED
+}
+
+model User {
+  id               String                 @id @default(cuid())
+  email            String                 @unique
+  passwordHash     String
+  fullName         String
+  role             UserRole               @default(DRIVER)
+  managedStopId    String?                @unique
+  primaryVehicleId String?                @unique
+  managedStop      Stop?                  @relation("OperatorStop", fields: [managedStopId], references: [id])
+  primaryVehicle   Vehicle?               @relation("DriverPrimaryVehicle", fields: [primaryVehicleId], references: [id], onDelete: SetNull)
+  publishedTrips   Trip[]                 @relation("TripOperator")
+  assignedTrips    Trip[]                 @relation("TripDriver")
+  verifiedBookings Booking[]              @relation("PaymentVerifier")
+  createdBookings  Booking[]              @relation("BookingCreator")
+  simulations      CommissionSimulation[] @relation("SimulationCreator")
+  authoredFeedback Feedback[]             @relation("FeedbackAuthor")
+  assignedFeedback Feedback[]             @relation("FeedbackAssignee")
+  createdAt        DateTime               @default(now())
+}
+
+model Route {
+  id        String      @id @default(cuid())
+  name      String
+  direction Direction   @unique
+  stops     RouteStop[]
+  trips     Trip[]
+}
+
+model Stop {
+  id                  String      @id @default(cuid())
+  name                String      @unique
+  routeStops          RouteStop[]
+  managedBy           User?       @relation("OperatorStop")
+  departureTrips      Trip[]      @relation("TripDepartureStop")
+  boardingBookings    Booking[]   @relation("BoardingStop")
+  destinationBookings Booking[]   @relation("DestinationStop")
+  createdBookings     Booking[]   @relation("BookingCreationStop")
+}
+
+model RouteStop {
+  routeId String
+  stopId  String
+  order   Int
+  route   Route  @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  stop    Stop   @relation(fields: [stopId], references: [id], onDelete: Cascade)
+
+  @@id([routeId, stopId])
+  @@unique([routeId, order])
+}
+
+model Vehicle {
+  id                String           @id @default(cuid())
+  code              String           @unique
+  registrationNumber String?          @unique
+  capacity          Int              @default(17)
+  active            Boolean          @default(true)
+  primaryDriver     User?            @relation("DriverPrimaryVehicle")
+  trips             Trip[]
+}
+
+model Trip {
+  id                             String          @id @default(cuid())
+  departureAt                    DateTime
+  priceAr                        Int             @default(50000)
+  depositRequiredAr              Int             @default(0)
+  status                         TripStatus      @default(DRAFT)
+  routeId                        String
+  vehicleId                      String
+  departureStopId                String?
+  operatorId                     String?
+  driverId                       String?
+  meetingPoint                   String?
+  meetingTime                    String?
+  operatorPhone                  String?
+  paymentMessage                 String?
+  mvolaNumber                    String?
+  mvolaAccountName               String?
+  orangeMoneyNumber              String?
+  orangeMoneyAccountName         String?
+  airtelMoneyNumber              String?
+  airtelMoneyAccountName         String?
+  publishedAt                    DateTime?
+  exceptionalVehicleChangeReason String?
+  exceptionalVehicleChangeById   String?
+  exceptionalVehicleChangeAt     DateTime?
+  route                          Route           @relation(fields: [routeId], references: [id])
+  vehicle                        Vehicle         @relation(fields: [vehicleId], references: [id])
+  departureStop                  Stop?           @relation("TripDepartureStop", fields: [departureStopId], references: [id])
+  operator                       User?           @relation("TripOperator", fields: [operatorId], references: [id])
+  driver                         User?           @relation("TripDriver", fields: [driverId], references: [id], onDelete: SetNull)
+  bookings                       Booking[]
+  seatBookings                   SeatBooking[]
+  waitlistEntries                WaitlistEntry[]
+
+  @@unique([departureAt, routeId, vehicleId])
+  @@index([departureAt, routeId])
+  @@index([departureStopId, departureAt])
+  @@index([driverId, departureAt])
+  @@index([status, departureAt])
+  @@index([exceptionalVehicleChangeById])
+}
+
+model Booking {
+  id                 String          @id @default(cuid())
+  reference          String?         @unique
+  passengerName      String
+  passengerPhone     String
+  seats              Int             @default(1)
+  tripId             String
+  boardingStopId     String?
+  destinationStopId  String?
+  status             BookingStatus   @default(PENDING_PAYMENT)
+  priceAtBookingAr   Int             @default(50000)
+  depositRequiredAr  Int             @default(0)
+  amountPaidAr       Int             @default(0)
+  paymentNetwork     PaymentNetwork?
+  paymentReference   String?
+  payerPhone         String?
+  paymentDeclaredAt  DateTime?
+  paymentVerifiedAt  DateTime?
+  verifiedById       String?
+  origin             BookingOrigin   @default(LEGACY_UNKNOWN)
+  createdById        String?
+  createdAtStopId    String?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  createdAt          DateTime        @default(now())
+  trip               Trip            @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  boardingStop       Stop?           @relation("BoardingStop", fields: [boardingStopId], references: [id])
+  destinationStop    Stop?           @relation("DestinationStop", fields: [destinationStopId], references: [id])
+  verifiedBy         User?           @relation("PaymentVerifier", fields: [verifiedById], references: [id])
+  createdBy          User?           @relation("BookingCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAtStop      Stop?           @relation("BookingCreationStop", fields: [createdAtStopId], references: [id], onDelete: SetNull)
+  seatBookings       SeatBooking[]
+  feedback           Feedback[]
+
+  @@unique([id, tripId])
+  @@index([tripId, status])
+  @@index([passengerPhone])
+  @@index([boardingStopId])
+  @@index([origin, createdAt])
+  @@index([createdById, createdAt])
+  @@index([createdAtStopId, createdAt])
+}
+
+model CommissionSimulation {
+  id                String    @id @default(cuid())
+  createdById       String
+  createdAt         DateTime  @default(now())
+  from              DateTime?
+  to                DateTime?
+  basis             String
+  method            String
+  assumedPercentage Decimal?  @db.Decimal(8, 4)
+  assumedFixedAr    Int?
+  reservationCount  Int
+  seatCount         Int
+  grossAmountAr     Int
+  paidAmountAr      Int
+  simulatedAmountAr Int
+  note              String?
+  createdBy         User      @relation("SimulationCreator", fields: [createdById], references: [id])
+
+  @@index([createdById, createdAt])
+  @@index([createdAt])
+}
+
+model Feedback {
+  id           String             @id @default(cuid())
+  type         FeedbackType
+  authorType   FeedbackAuthorType
+  audience     FeedbackAudience   @default(SUPER_ADMIN)
+  status       FeedbackStatus     @default(NEW)
+  priority     Int                @default(2)
+  rating       Int?
+  authorName   String
+  authorPhone  String?
+  authorUserId String?
+  bookingId    String?
+  subject      String?
+  message      String
+  response     String?
+  assignedToId String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  resolvedAt   DateTime?
+
+  booking    Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  authorUser User?    @relation("FeedbackAuthor", fields: [authorUserId], references: [id], onDelete: SetNull)
+  assignedTo User?    @relation("FeedbackAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  @@index([type, status, createdAt])
+  @@index([audience, status, priority])
+  @@index([bookingId])
+}
+
+model SeatBooking {
+  id         String   @id @default(cuid())
+  tripId     String
+  bookingId  String
+  seatNumber Int
+  createdAt  DateTime @default(now())
+  trip       Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  booking    Booking  @relation(fields: [bookingId, tripId], references: [id, tripId], onDelete: Cascade)
+
+  @@unique([tripId, seatNumber])
+  @@index([bookingId])
+}
+
+model WaitlistEntry {
+  id             String         @id @default(cuid())
+  tripId         String
+  passengerName  String
+  passengerPhone String
+  seats          Int            @default(1)
+  status         WaitlistStatus @default(WAITING)
+  createdAt      DateTime       @default(now())
+  contactedAt    DateTime?
+  trip           Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId, status, createdAt])
+}
